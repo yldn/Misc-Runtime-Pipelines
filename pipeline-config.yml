@@ -1,0 +1,52 @@
+# Pipeline Configuration
+# This file defines the automation pipelines that will run
+
+version: "1.0"
+
+pipelines:
+  build:
+    enabled: true
+    script: automation/build.sh
+    description: "Build automation pipeline"
+    triggers:
+      - push
+      - pull_request
+    
+  test:
+    enabled: true
+    script: automation/test.sh
+    description: "Test automation pipeline"
+    triggers:
+      - push
+      - pull_request
+    
+  deploy:
+    enabled: false
+    script: automation/deploy.sh
+    description: "Deployment automation pipeline"
+    triggers:
+      - push
+    branches:
+      - main
+      - master
+
+github:
+  webhook:
+    enabled: true
+    events:
+      - push
+      - pull_request
+    secret: "${WEBHOOK_SECRET}"
+  
+jenkins:
+  auto_reload: true
+  poll_interval: "H/5 * * * *"
+  build_retention: 10
+
+notifications:
+  email:
+    enabled: false
+    recipients: []
+  slack:
+    enabled: false
+    webhook_url: ""
