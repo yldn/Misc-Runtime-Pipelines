@@ -31,11 +31,22 @@ pipeline {
                 echo "Build: ${env.BUILD_NUMBER}"
                 
                 script {
+                    // Check if this is the first build
+                    def isFirstBuild = sh(
+                        script: 'git rev-parse HEAD~1 >/dev/null 2>&1',
+                        returnStatus: true
+                    ) != 0
+                    
                     // Display changed files
-                    def changedFiles = sh(
-                        script: 'git diff --name-only HEAD~1 HEAD || echo "First build"',
-                        returnStdout: true
-                    ).trim()
+                    def changedFiles
+                    if (isFirstBuild) {
+                        changedFiles = "First build - all files are new"
+                    } else {
+                        changedFiles = sh(
+                            script: 'git diff --name-only HEAD~1 HEAD',
+                            returnStdout: true
+                        ).trim()
+                    }
                     echo "Changed files:\n${changedFiles}"
                 }
             }
@@ -44,23 +55,32 @@ pipeline {
         stage('Detect Changes') {
             steps {
                 script {
+                    // Helper function to check file changes
+                    def hasChanges = { pattern ->
+                        def isFirstBuild = sh(
+                            script: 'git rev-parse HEAD~1 >/dev/null 2>&1',
+                            returnStatus: true
+                        ) != 0
+                        
+                        if (isFirstBuild) {
+                            return 'true'
+                        }
+                        
+                        return sh(
+                            script: "git diff --name-only HEAD~1 HEAD | grep -q '${pattern}' && echo 'true' || echo 'false'",
+                            returnStdout: true
+                        ).trim()
+                    }
+                    
                     // Check if Jenkinsfile was changed
-                    def jenkinsfileChanged = sh(
-                        script: 'git diff --name-only HEAD~1 HEAD | grep -q "^Jenkinsfile" && echo "true" || echo "false"',
-                        returnStdout: true
-                    ).trim()
+                    def jenkinsfileChanged = hasChanges('^Jenkinsfile')
                     
                     if (jenkinsfileChanged == 'true') {
                         echo "⚠️  Jenkinsfile was updated - Pipeline will reload on next run"
                     }
                     
                     // Check if automation scripts changed
-                    def automationChanged = sh(
-                        script: 'git diff --name-only HEAD~1 HEAD | grep -q "^automation/" && echo "true" || echo "false"',
-                        returnStdout: true
-                    ).trim()
-                    
-                    env.AUTOMATION_CHANGED = automationChanged
+                    env.AUTOMATION_CHANGED = hasChanges('^automation/')
                 }
             }
         }
@@ -73,13 +93,25 @@ pipeline {
                 echo "Running updated automation scripts..."
                 
                 script {
-                    // Find and execute all automation scripts
-                    def scripts = findFiles(glob: 'automation/**/*.sh')
+                    // Whitelist of allowed automation scripts for security
+                    def allowedScripts = [
+                        'automation/build.sh',
+                        'automation/test.sh',
+                        'automation/deploy.sh',
+                        'automation/example-with-libs.sh'
+                    ]
+                    
+                    // Find and execute only whitelisted automation scripts
+                    def scripts = findFiles(glob: 'automation/*.sh')
                     
                     for (script in scripts) {
-                        echo "Executing: ${script.path}"
-                        sh "chmod +x ${script.path}"
-                        sh "./${script.path}"
+                        if (allowedScripts.contains(script.path)) {
+                            echo "Executing whitelisted script: ${script.path}"
+                            sh "chmod +x ${script.path}"
+                            sh "./${script.path}"
+                        } else {
+                            echo "⚠️  Skipping non-whitelisted script: ${script.path}"
+                        }
                     }
                 }
             }

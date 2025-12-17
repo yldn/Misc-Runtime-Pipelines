@@ -36,6 +36,11 @@ github:
     events:
       - push
       - pull_request
+    # Store webhook secret in Jenkins credentials
+    # Instructions: 
+    # 1. Go to Jenkins -> Manage Jenkins -> Manage Credentials
+    # 2. Add Secret Text credential with ID "github-webhook-secret"
+    # 3. Use this secret in GitHub webhook configuration
     secret: "${WEBHOOK_SECRET}"
   
 jenkins:

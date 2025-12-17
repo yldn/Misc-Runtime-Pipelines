@@ -21,6 +21,10 @@ This document explains how to configure GitHub webhooks to automatically trigger
 2. **Create Jenkins Credentials:**
    - Go to: `Manage Jenkins` → `Manage Credentials`
    - Add GitHub personal access token with `repo` and `admin:repo_hook` permissions
+   - **For webhook security:** Add a Secret Text credential:
+     - ID: `github-webhook-secret`
+     - Secret: Generate a random string (e.g., using `openssl rand -hex 32`)
+     - Description: GitHub webhook secret for Misc-Runtime-Pipelines
 
 3. **Configure GitHub Server:**
    - Go to: `Manage Jenkins` → `Configure System`
@@ -59,9 +63,14 @@ This document explains how to configure GitHub webhooks to automatically trigger
    ```
    Payload URL: http://YOUR-JENKINS-URL/github-webhook/
    Content type: application/json
-   Secret: (optional, recommended for security)
+   Secret: (use the secret from Jenkins credential 'github-webhook-secret')
    SSL verification: Enable (if using HTTPS)
    ```
+   
+   **To get the secret:**
+   - In Jenkins, go to the credential you created
+   - Or generate a new one: `openssl rand -hex 32`
+   - Store it in Jenkins credentials and use the same value in GitHub
 
 3. **Select Events:**
    - [x] Push events

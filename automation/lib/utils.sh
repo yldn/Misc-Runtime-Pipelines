@@ -48,11 +48,17 @@ ensure_directory() {
     fi
 }
 
-# Cleanup function
+# Optional cleanup function - scripts can override this
+# Note: If you source this library and need custom cleanup,
+# define your own cleanup function AFTER sourcing this file
 cleanup() {
-    log_info "Cleaning up temporary files..."
-    # Add cleanup logic here
+    # Default cleanup - can be overridden by sourcing script
+    :
 }
 
-# Trap cleanup on exit
-trap cleanup EXIT
+# Set trap only if not already set
+# Scripts can disable this by unsetting the trap after sourcing
+if [ -z "$UTILS_TRAP_SET" ]; then
+    trap cleanup EXIT
+    export UTILS_TRAP_SET=1
+fi
