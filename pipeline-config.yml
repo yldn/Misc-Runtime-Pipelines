@@ -1,0 +1,57 @@
+# Pipeline Configuration
+# This file defines the automation pipelines that will run
+
+version: "1.0"
+
+pipelines:
+  build:
+    enabled: true
+    script: automation/build.sh
+    description: "Build automation pipeline"
+    triggers:
+      - push
+      - pull_request
+    
+  test:
+    enabled: true
+    script: automation/test.sh
+    description: "Test automation pipeline"
+    triggers:
+      - push
+      - pull_request
+    
+  deploy:
+    enabled: false
+    script: automation/deploy.sh
+    description: "Deployment automation pipeline"
+    triggers:
+      - push
+    branches:
+      - main
+      - master
+
+github:
+  webhook:
+    enabled: true
+    events:
+      - push
+      - pull_request
+    # Store webhook secret in Jenkins credentials
+    # Instructions: 
+    # 1. Go to Jenkins -> Manage Jenkins -> Manage Credentials
+    # 2. Add Secret Text credential with ID "github-webhook-secret"
+    # 3. Use this secret in GitHub webhook configuration
+    secret: "${WEBHOOK_SECRET}"
+  
+jenkins:
+  auto_reload: true
+  poll_interval: "H/5 * * * *"
+  build_retention: 10
+
+notifications:
+  email:
+    enabled: false
+    recipients: []
+  slack:
+    enabled: false
+    webhook_url: ""

@@ -1,0 +1,31 @@
+# Jenkins workspace
+.jenkins/
+workspace/
+
+# Build artifacts
+build/
+dist/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+
+# Test results
+test-results/
+coverage/
