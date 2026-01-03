@@ -2,8 +2,7 @@ pipeline {
 	agent any
 
 	options {
-		wrap([$class: 'TimestamperBuildWrapper'])
-		wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm'])
+		// Keep options minimal for maximum Jenkins compatibility.
 		buildDiscarder(logRotator(numToKeepStr: '20'))
 		disableConcurrentBuilds()
 	}
