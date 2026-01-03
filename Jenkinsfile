@@ -2,8 +2,8 @@ pipeline {
 	agent any
 
 	options {
-		timestamps()
-		ansiColor('xterm')
+		wrap([$class: 'TimestamperBuildWrapper'])
+		wrap([$class: 'AnsiColorBuildWrapper', colorMapName: 'xterm'])
 		buildDiscarder(logRotator(numToKeepStr: '20'))
 		disableConcurrentBuilds()
 	}
