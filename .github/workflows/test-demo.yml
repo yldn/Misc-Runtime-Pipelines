@@ -1,0 +1,181 @@
+name: 🧪 Test & Demo Workflow
+
+# This workflow is designed for testing and learning
+# Try triggering it manually to see how it works!
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        type: choice
+        options:
+          - 'basic-test'
+          - 'matrix-test'
+          - 'artifact-test'
+          - 'all-tests'
+        default: 'basic-test'
+      
+      message:
+        description: 'Custom message to display'
+        required: false
+        type: string
+        default: 'Hello from GitHub Actions!'
+
+jobs:
+  # Job 1: Basic Tests
+  basic-test:
+    if: inputs.test_type == 'basic-test' || inputs.test_type == 'all-tests'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🎯 Display inputs
+        run: |
+          echo "================================"
+          echo "Test Type: ${{ inputs.test_type }}"
+          echo "Message: ${{ inputs.message }}"
+          echo "================================"
+      
+      - name: 🖥️ Show environment info
+        run: |
+          echo "Runner OS: ${{ runner.os }}"
+          echo "GitHub Repository: ${{ github.repository }}"
+          echo "GitHub Actor: ${{ github.actor }}"
+          echo "GitHub Branch: ${{ github.ref }}"
+          echo "GitHub SHA: ${{ github.sha }}"
+      
+      - name: 📝 Test environment variables
+        env:
+          CUSTOM_VAR: "This is a custom variable"
+          USER_MESSAGE: ${{ inputs.message }}
+        run: |
+          echo "Custom Variable: $CUSTOM_VAR"
+          echo "User Message: $USER_MESSAGE"
+      
+      - name: 🧮 Run some calculations
+        run: |
+          echo "2 + 2 = $((2 + 2))"
+          echo "10 * 5 = $((10 * 5))"
+          echo "Date: $(date)"
+      
+      - name: ✅ Test passed!
+        run: echo "✅ Basic test completed successfully!"
+
+  # Job 2: Matrix Tests
+  matrix-test:
+    if: inputs.test_type == 'matrix-test' || inputs.test_type == 'all-tests'
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        test-number: [1, 2, 3]
+    
+    steps:
+      - name: 🔢 Matrix test ${{ matrix.test-number }} on ${{ matrix.os }}
+        run: |
+          echo "Testing on ${{ matrix.os }}"
+          echo "Test number: ${{ matrix.test-number }}"
+          echo "Message: ${{ inputs.message }}"
+      
+      - name: 🐧 Linux-specific test
+        if: runner.os == 'Linux'
+        run: |
+          echo "Running on Linux!"
+          uname -a
+      
+      - name: 🪟 Windows-specific test
+        if: runner.os == 'Windows'
+        run: |
+          echo "Running on Windows!"
+          Get-ComputerInfo | Select-Object WindowsVersion, OsName
+      
+      - name: 🍎 macOS-specific test
+        if: runner.os == 'macOS'
+        run: |
+          echo "Running on macOS!"
+          sw_vers
+
+  # Job 3: Artifact Tests
+  artifact-create:
+    if: inputs.test_type == 'artifact-test' || inputs.test_type == 'all-tests'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📦 Create test files
+        run: |
+          mkdir -p test-output
+          echo "Test file 1" > test-output/file1.txt
+          echo "Test file 2" > test-output/file2.txt
+          echo "${{ inputs.message }}" > test-output/message.txt
+          echo "Created at: $(date)" > test-output/timestamp.txt
+          ls -la test-output/
+      
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: test-output/
+          retention-days: 1
+
+  artifact-download:
+    if: inputs.test_type == 'artifact-test' || inputs.test_type == 'all-tests'
+    needs: artifact-create
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-artifacts
+          path: downloaded-files/
+      
+      - name: 📋 Verify downloaded files
+        run: |
+          echo "Contents of downloaded files:"
+          ls -la downloaded-files/
+          echo "================================"
+          echo "File 1:"
+          cat downloaded-files/file1.txt
+          echo "File 2:"
+          cat downloaded-files/file2.txt
+          echo "Message:"
+          cat downloaded-files/message.txt
+          echo "Timestamp:"
+          cat downloaded-files/timestamp.txt
+      
+      - name: ✅ Artifact test passed!
+        run: echo "✅ Artifact upload/download completed successfully!"
+
+  # Job 4: Summary Report
+  summary:
+    if: always()
+    needs: [basic-test, matrix-test, artifact-download]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          echo "# 🎉 Test Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Type**: ${{ inputs.test_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Message**: ${{ inputs.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Basic Test: ${{ needs.basic-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Matrix Test: ${{ needs.matrix-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Artifact Test: ${{ needs.artifact-download.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All tests completed!" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 🎊 Celebrate!
+        run: |
+          echo "================================"
+          echo "🎉 Congratulations!"
+          echo "You've successfully run a GitHub Actions workflow!"
+          echo "================================"

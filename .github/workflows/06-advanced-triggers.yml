@@ -1,0 +1,68 @@
+name: 06 - Advanced Triggers
+
+# Demonstrates various trigger types and filters
+
+on:
+  # Push with path filters
+  push:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'src/**'
+      - '!src/docs/**'
+    tags:
+      - 'v*'
+  
+  # Pull request events
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+  
+  # Scheduled runs (cron syntax)
+  schedule:
+    # Run every day at 2:30 AM UTC
+    - cron: '30 2 * * *'
+  
+  # Manual trigger with inputs
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      
+      version:
+        description: 'Version number'
+        required: false
+        type: string
+      
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  show-trigger:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Show trigger information
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+      
+      - name: Show workflow inputs
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Version: ${{ inputs.version }}"
+          echo "Debug: ${{ inputs.debug }}"

@@ -1,0 +1,82 @@
+name: 05 - Conditional Jobs
+
+# Demonstrates job dependencies and conditional execution
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.deploy }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check deployment conditions
+        id: check
+        run: |
+          # Example: only deploy on main branch
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          fi
+  
+  build:
+    needs: setup
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build application
+        run: |
+          echo "Building application..."
+          mkdir -p dist
+          echo "Build output" > dist/app.txt
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+  
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+      
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+          cat dist/app.txt
+          echo "Tests passed!"
+  
+  deploy:
+    needs: [build, test, setup]
+    if: needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+      
+      - name: Deploy
+        run: |
+          echo "Deploying to production..."
+          echo "Deployment complete!"

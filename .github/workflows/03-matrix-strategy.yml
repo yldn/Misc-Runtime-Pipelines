@@ -1,0 +1,39 @@
+name: 03 - Matrix Strategy
+
+# Run tests across multiple versions/platforms in parallel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  test-matrix:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      # Continue running other jobs even if one fails
+      fail-fast: false
+      matrix:
+        # Test on multiple operating systems
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Test with multiple versions
+        version: [14, 16, 18]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Show environment
+        run: |
+          echo "OS: ${{ matrix.os }}"
+          echo "Version: ${{ matrix.version }}"
+          echo "Runner: ${{ runner.os }}"
+      
+      - name: Platform-specific command (Linux/Mac)
+        if: runner.os != 'Windows'
+        run: echo "Running on Unix-like system"
+      
+      - name: Platform-specific command (Windows)
+        if: runner.os == 'Windows'
+        run: echo "Running on Windows"
